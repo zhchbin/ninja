@@ -286,9 +286,9 @@ int ToolQuery(Globals* globals, int argc, char* argv[]) {
       }
     }
     printf("  outputs:\n");
-    for (vector<Edge*>::const_iterator edge = node->out_edges().begin();
+    for (Node::Edges::const_iterator edge = node->out_edges().begin();
          edge != node->out_edges().end(); ++edge) {
-      for (vector<Node*>::iterator out = (*edge)->outputs_.begin();
+      for (Edge::Nodes::iterator out = (*edge)->outputs_.begin();
            out != (*edge)->outputs_.end(); ++out) {
         printf("    %s\n", (*out)->path().c_str());
       }
@@ -319,10 +319,9 @@ int ToolMSVC(Globals* globals, int argc, char* argv[]) {
 }
 #endif
 
+/* XXX
 int ToolTargetsList(const vector<Node*>& nodes, int depth, int indent) {
-  for (vector<Node*>::const_iterator n = nodes.begin();
-       n != nodes.end();
-       ++n) {
+  for (vector<Node*>::const_iterator n = nodes.begin(); n != nodes.end(); ++n) {
     for (int i = 0; i < indent; ++i)
       printf("  ");
     const char* target = (*n)->path().c_str();
@@ -356,7 +355,7 @@ int ToolTargetsList(State* state, const string& rule_name) {
   for (vector<Edge*>::iterator e = state->edges_.begin();
        e != state->edges_.end(); ++e) {
     if ((*e)->rule_->name() == rule_name) {
-      for (vector<Node*>::iterator out_node = (*e)->outputs_.begin();
+      for (Edge::Nodes::iterator out_node = (*e)->outputs_.begin();
            out_node != (*e)->outputs_.end(); ++out_node) {
         rules.insert((*out_node)->path());
       }
@@ -375,7 +374,7 @@ int ToolTargetsList(State* state, const string& rule_name) {
 int ToolTargetsList(State* state) {
   for (vector<Edge*>::iterator e = state->edges_.begin();
        e != state->edges_.end(); ++e) {
-    for (vector<Node*>::iterator out_node = (*e)->outputs_.begin();
+    for (Edge::Nodes::iterator out_node = (*e)->outputs_.begin();
          out_node != (*e)->outputs_.end(); ++out_node) {
       printf("%s: %s\n",
              (*out_node)->path().c_str(),
@@ -424,6 +423,7 @@ int ToolTargets(Globals* globals, int argc, char* argv[]) {
     return 1;
   }
 }
+*/
 
 void PrintCommands(Edge* edge, set<Edge*>* seen) {
   if (!edge)
@@ -431,7 +431,7 @@ void PrintCommands(Edge* edge, set<Edge*>* seen) {
   if (!seen->insert(edge).second)
     return;
 
-  for (vector<Node*>::iterator in = edge->inputs_.begin();
+  for (Edge::Nodes::iterator in = edge->inputs_.begin();
        in != edge->inputs_.end(); ++in)
     PrintCommands((*in)->in_edge(), seen);
 
@@ -596,8 +596,8 @@ const Tool* ChooseTool(const string& tool_name) {
       Tool::RUN_AFTER_LOAD, ToolGraph },
     { "query", "show inputs/outputs for a path",
       Tool::RUN_AFTER_LOAD, ToolQuery },
-    { "targets",  "list targets by their rule or depth in the DAG",
-      Tool::RUN_AFTER_LOAD, ToolTargets },
+    /*{ "targets",  "list targets by their rule or depth in the DAG",
+      Tool::RUN_AFTER_LOAD, ToolTargets },*/
     { "compdb",  "dump JSON compilation database to stdout",
       Tool::RUN_AFTER_LOAD, ToolCompilationDatabase },
     { "urtle", NULL,

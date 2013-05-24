@@ -20,6 +20,7 @@
 using namespace std;
 
 #include "eval_env.h"
+#include "pointer_vector.h"
 #include "timestamp.h"
 
 struct BuildLog;
@@ -83,7 +84,8 @@ struct Node {
   int id() const { return id_; }
   void set_id(int id) { id_ = id; }
 
-  const vector<Edge*>& out_edges() const { return out_edges_; }
+  typedef PointerVector<Edge> Edges;
+  const Edges& out_edges() const { return out_edges_; }
   void AddOutEdge(Edge* edge) { out_edges_.push_back(edge); }
 
   void Dump(const char* prefix="") const;
@@ -106,7 +108,7 @@ private:
   Edge* in_edge_;
 
   /// All Edges that use this Node as an input.
-  vector<Edge*> out_edges_;
+  Edges out_edges_;
 
   /// A dense integer id for the node, assigned and used by DepsLog.
   int id_;
@@ -153,8 +155,9 @@ struct Edge {
 
   const Rule* rule_;
   Pool* pool_;
-  vector<Node*> inputs_;
-  vector<Node*> outputs_;
+  typedef PointerVector<Node> Nodes;
+  Nodes inputs_;
+  Nodes outputs_;
   BindingEnv* env_;
   bool outputs_ready_;
 
@@ -212,7 +215,7 @@ struct ImplicitDepLoader {
 
   /// Preallocate \a count spaces in the input array on \a edge, returning
   /// an iterator pointing at the first new space.
-  vector<Node*>::iterator PreallocateSpace(Edge* edge, int count);
+  Edge::Nodes::iterator PreallocateSpace(Edge* edge, int count);
 
   /// If we don't have a edge that generates this input already,
   /// create one; this makes us not abort if the input is missing,

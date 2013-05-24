@@ -116,7 +116,7 @@ int Cleaner::CleanAll(bool generator) {
     // Do not remove generator's files unless generator specified.
     if (!generator && (*e)->GetBindingBool("generator"))
       continue;
-    for (vector<Node*>::iterator out_node = (*e)->outputs_.begin();
+    for (Edge::Nodes::iterator out_node = (*e)->outputs_.begin();
          out_node != (*e)->outputs_.end(); ++out_node) {
       Remove((*out_node)->path());
     }
@@ -134,7 +134,7 @@ void Cleaner::DoCleanTarget(Node* target) {
       Remove(target->path());
       RemoveEdgeFiles(e);
     }
-    for (vector<Node*>::iterator n = e->inputs_.begin(); n != e->inputs_.end();
+    for (Edge::Nodes::iterator n = e->inputs_.begin(); n != e->inputs_.end();
          ++n) {
       Node* next = *n;
       // call DoCleanTarget recursively if this node has not been visited
@@ -197,7 +197,7 @@ void Cleaner::DoCleanRule(const Rule* rule) {
   for (vector<Edge*>::iterator e = state_->edges_.begin();
        e != state_->edges_.end(); ++e) {
     if ((*e)->rule().name() == rule->name()) {
-      for (vector<Node*>::iterator out_node = (*e)->outputs_.begin();
+      for (Edge::Nodes::iterator out_node = (*e)->outputs_.begin();
            out_node != (*e)->outputs_.end(); ++out_node) {
         Remove((*out_node)->path());
         RemoveEdgeFiles(*e);

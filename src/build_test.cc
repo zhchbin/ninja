@@ -465,7 +465,7 @@ bool FakeCommandRunner::StartCommand(Edge* edge) {
       edge->rule().name() == "cc" ||
       edge->rule().name() == "touch" ||
       edge->rule().name() == "touch-interrupt") {
-    for (vector<Node*>::iterator out = edge->outputs_.begin();
+    for (Edge::Nodes::iterator out = edge->outputs_.begin();
          out != edge->outputs_.end(); ++out) {
       fs_->Create((*out)->path(), "");
     }
@@ -768,6 +768,7 @@ TEST_F(BuildTest, OrderOnlyDeps) {
 
   // One explicit, two implicit, one order only.
   ASSERT_EQ(4u, edge->inputs_.size());
+  ASSERT_EQ(1u, edge->outputs_.size());
   EXPECT_EQ(2, edge->implicit_deps_);
   EXPECT_EQ(1, edge->order_only_deps_);
   // Verify the inputs are in the order we expect
@@ -776,6 +777,7 @@ TEST_F(BuildTest, OrderOnlyDeps) {
   EXPECT_EQ("blah.h", edge->inputs_[1]->path());
   EXPECT_EQ("bar.h", edge->inputs_[2]->path());
   EXPECT_EQ("otherfile", edge->inputs_[3]->path());
+  EXPECT_EQ("foo.o", edge->outputs_[0]->path());
 
   // Expect the command line we generate to only use the original input.
   ASSERT_EQ("cc foo.c", edge->EvaluateCommand());

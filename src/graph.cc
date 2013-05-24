@@ -71,7 +71,7 @@ bool DependencyScan::RecomputeDirty(Edge* edge, string* err) {
 
   // Visit all inputs; we're dirty if any of the inputs are dirty.
   Node* most_recent_input = NULL;
-  for (vector<Node*>::iterator i = edge->inputs_.begin();
+  for (Edge::Nodes::iterator i = edge->inputs_.begin();
        i != edge->inputs_.end(); ++i) {
     if ((*i)->StatIfNecessary(disk_interface_)) {
       if (Edge* in_edge = (*i)->in_edge()) {
@@ -110,7 +110,7 @@ bool DependencyScan::RecomputeDirty(Edge* edge, string* err) {
   if (!dirty) {
     string command = edge->EvaluateCommand(true);
 
-    for (vector<Node*>::iterator i = edge->outputs_.begin();
+    for (Edge::Nodes::iterator i = edge->outputs_.begin();
          i != edge->outputs_.end(); ++i) {
       (*i)->StatIfNecessary(disk_interface_);
       if (RecomputeOutputDirty(edge, most_recent_input, deps_mtime,
@@ -123,7 +123,7 @@ bool DependencyScan::RecomputeDirty(Edge* edge, string* err) {
 
   // Finally, visit each output to mark off that we've visited it, and update
   // their dirty state if necessary.
-  for (vector<Node*>::iterator i = edge->outputs_.begin();
+  for (Edge::Nodes::iterator i = edge->outputs_.begin();
        i != edge->outputs_.end(); ++i) {
     (*i)->StatIfNecessary(disk_interface_);
     if (dirty)
@@ -212,7 +212,7 @@ bool DependencyScan::RecomputeOutputDirty(Edge* edge,
 }
 
 bool Edge::AllInputsReady() const {
-  for (vector<Node*>::const_iterator i = inputs_.begin();
+  for (Edge::Nodes::const_iterator i = inputs_.begin();
        i != inputs_.end(); ++i) {
     if ((*i)->in_edge() && !(*i)->in_edge()->outputs_ready())
       return false;
@@ -227,8 +227,8 @@ struct EdgeEnv : public Env {
 
   /// Given a span of Nodes, construct a list of paths suitable for a command
   /// line.
-  string MakePathList(vector<Node*>::iterator begin,
-                      vector<Node*>::iterator end,
+  string MakePathList(Edge::Nodes::iterator begin,
+                      Edge::Nodes::iterator end,
                       char sep);
 
   Edge* edge_;
@@ -252,11 +252,11 @@ string EdgeEnv::LookupVariable(const string& var) {
   return edge_->env_->LookupWithFallback(var, eval, this);
 }
 
-string EdgeEnv::MakePathList(vector<Node*>::iterator begin,
-                             vector<Node*>::iterator end,
+string EdgeEnv::MakePathList(Edge::Nodes::iterator begin,
+                             Edge::Nodes::iterator end,
                              char sep) {
   string result;
-  for (vector<Node*>::iterator i = begin; i != end; ++i) {
+  for (Edge::Nodes::iterator i = begin; i != end; ++i) {
     if (!result.empty())
       result.push_back(sep);
     const string& path = (*i)->path();
@@ -292,12 +292,12 @@ bool Edge::GetBindingBool(const string& key) {
 
 void Edge::Dump(const char* prefix) const {
   printf("%s[ ", prefix);
-  for (vector<Node*>::const_iterator i = inputs_.begin();
+  for (Edge::Nodes::const_iterator i = inputs_.begin();
        i != inputs_.end() && *i != NULL; ++i) {
     printf("%s ", (*i)->path().c_str());
   }
   printf("--%s-> ", rule_->name().c_str());
-  for (vector<Node*>::const_iterator i = outputs_.begin();
+  for (Edge::Nodes::const_iterator i = outputs_.begin();
        i != outputs_.end() && *i != NULL; ++i) {
     printf("%s ", (*i)->path().c_str());
   }
@@ -326,7 +326,7 @@ void Node::Dump(const char* prefix) const {
     printf("no in-edge\n");
   }
   printf(" out edges:\n");
-  for (vector<Edge*>::const_iterator e = out_edges().begin();
+  for (Edges::const_iterator e = out_edges().begin();
        e != out_edges().end() && *e != NULL; ++e) {
     (*e)->Dump(" +- ");
   }
@@ -388,7 +388,7 @@ bool ImplicitDepLoader::LoadDepFile(Edge* edge, const string& path,
   }
 
   // Preallocate space in edge->inputs_ to be filled in below.
-  vector<Node*>::iterator implicit_dep =
+  Edge::Nodes::iterator implicit_dep =
       PreallocateSpace(edge, depfile.ins_.size());
 
   // Add all its in-edges.
@@ -414,7 +414,7 @@ bool ImplicitDepLoader::LoadDepsFromLog(Edge* edge, TimeStamp* deps_mtime,
 
   *deps_mtime = deps->mtime;
 
-  vector<Node*>::iterator implicit_dep =
+  Edge::Nodes::iterator implicit_dep =
       PreallocateSpace(edge, deps->node_count);
   for (int i = 0; i < deps->node_count; ++i, ++implicit_dep) {
     *implicit_dep = deps->nodes[i];
@@ -423,10 +423,10 @@ bool ImplicitDepLoader::LoadDepsFromLog(Edge* edge, TimeStamp* deps_mtime,
   return true;
 }
 
-vector<Node*>::iterator ImplicitDepLoader::PreallocateSpace(Edge* edge,
+Edge::Nodes::iterator ImplicitDepLoader::PreallocateSpace(Edge* edge,
                                                             int count) {
-  edge->inputs_.insert(edge->inputs_.end() - edge->order_only_deps_,
-                       (size_t)count, 0);
+  edge->inputs_.make_space(edge->inputs_.size() - edge->order_only_deps_,
+                           count);
   edge->implicit_deps_ += count;
   return edge->inputs_.end() - edge->order_only_deps_ - count;
 }

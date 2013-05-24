@@ -297,7 +297,7 @@ bool Plan::AddSubTarget(Node* node, vector<Node*>* stack, string* err) {
     return true;  // We've already processed the inputs.
 
   stack->push_back(node);
-  for (vector<Node*>::iterator i = edge->inputs_.begin();
+  for (Edge::Nodes::iterator i = edge->inputs_.begin();
        i != edge->inputs_.end(); ++i) {
     if (!AddSubTarget(*i, stack, err) && !err->empty())
       return false;
@@ -371,7 +371,7 @@ void Plan::EdgeFinished(Edge* edge) {
   ResumeDelayedJobs(edge);
 
   // Check off any nodes we were waiting for with this edge.
-  for (vector<Node*>::iterator i = edge->outputs_.begin();
+  for (Edge::Nodes::iterator i = edge->outputs_.begin();
        i != edge->outputs_.end(); ++i) {
     NodeFinished(*i);
   }
@@ -379,7 +379,7 @@ void Plan::EdgeFinished(Edge* edge) {
 
 void Plan::NodeFinished(Node* node) {
   // See if we we want any edges from this node.
-  for (vector<Edge*>::const_iterator i = node->out_edges().begin();
+  for (Node::Edges::const_iterator i = node->out_edges().begin();
        i != node->out_edges().end(); ++i) {
     map<Edge*, bool>::iterator want_i = want_.find(*i);
     if (want_i == want_.end())
@@ -401,7 +401,7 @@ void Plan::NodeFinished(Node* node) {
 void Plan::CleanNode(DependencyScan* scan, Node* node) {
   node->set_dirty(false);
 
-  for (vector<Edge*>::const_iterator ei = node->out_edges().begin();
+  for (Node::Edges::const_iterator ei = node->out_edges().begin();
        ei != node->out_edges().end(); ++ei) {
     // Don't process edges that we don't actually want.
     map<Edge*, bool>::iterator want_i = want_.find(*ei);
@@ -410,13 +410,13 @@ void Plan::CleanNode(DependencyScan* scan, Node* node) {
 
     // If all non-order-only inputs for this edge are now clean,
     // we might have changed the dirty state of the outputs.
-    vector<Node*>::iterator
+    Edge::Nodes::iterator
         begin = (*ei)->inputs_.begin(),
         end = (*ei)->inputs_.end() - (*ei)->order_only_deps_;
     if (find_if(begin, end, mem_fun(&Node::dirty)) == end) {
       // Recompute most_recent_input and command.
       Node* most_recent_input = NULL;
-      for (vector<Node*>::iterator ni = begin; ni != end; ++ni) {
+      for (Edge::Nodes::iterator ni = begin; ni != end; ++ni) {
         if (!most_recent_input || (*ni)->mtime() > most_recent_input->mtime())
           most_recent_input = *ni;
       }
@@ -424,7 +424,7 @@ void Plan::CleanNode(DependencyScan* scan, Node* node) {
 
       // Now, recompute the dirty state of each output.
       bool all_outputs_clean = true;
-      for (vector<Node*>::iterator ni = (*ei)->outputs_.begin();
+      for (Edge::Nodes::iterator ni = (*ei)->outputs_.begin();
            ni != (*ei)->outputs_.end(); ++ni) {
         if (!(*ni)->dirty())
           continue;
@@ -540,7 +540,7 @@ void Builder::Cleanup() {
     for (vector<Edge*>::iterator i = active_edges.begin();
          i != active_edges.end(); ++i) {
       string depfile = (*i)->GetBinding("depfile");
-      for (vector<Node*>::iterator ni = (*i)->outputs_.begin();
+      for (Edge::Nodes::iterator ni = (*i)->outputs_.begin();
            ni != (*i)->outputs_.end(); ++ni) {
         // Only delete this output if it was actually modified.  This is
         // important for things like the generator where we don't want to
@@ -680,7 +680,7 @@ bool Builder::StartEdge(Edge* edge, string* err) {
 
   // Create directories necessary for outputs.
   // XXX: this will block; do we care?
-  for (vector<Node*>::iterator i = edge->outputs_.begin();
+  for (Edge::Nodes::iterator i = edge->outputs_.begin();
        i != edge->outputs_.end(); ++i) {
     if (!disk_interface_->MakeDirs((*i)->path()))
       return false;
@@ -740,7 +740,7 @@ void Builder::FinishCommand(CommandRunner::Result* result) {
   if (edge->GetBindingBool("restat") && !config_.dry_run) {
     bool node_cleaned = false;
 
-    for (vector<Node*>::iterator i = edge->outputs_.begin();
+    for (Edge::Nodes::iterator i = edge->outputs_.begin();
          i != edge->outputs_.end(); ++i) {
       TimeStamp new_mtime = disk_interface_->Stat((*i)->path());
       if ((*i)->mtime() == new_mtime) {
@@ -755,7 +755,7 @@ void Builder::FinishCommand(CommandRunner::Result* result) {
     if (node_cleaned) {
       // If any output was cleaned, find the most recent mtime of any
       // (existing) non-order-only input or the depfile.
-      for (vector<Node*>::iterator i = edge->inputs_.begin();
+      for (Edge::Nodes::iterator i = edge->inputs_.begin();
            i != edge->inputs_.end() - edge->order_only_deps_; ++i) {
         TimeStamp input_mtime = disk_interface_->Stat((*i)->path());
         if (input_mtime > restat_mtime)
