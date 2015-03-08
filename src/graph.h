@@ -165,6 +165,7 @@ struct Edge {
   string GetUnescapedRspfile();
 
   void Dump(const char* prefix="") const;
+  void DumpToString(std::string* content) const;
 
   const Rule* rule_;
   Pool* pool_;
@@ -199,6 +200,9 @@ struct Edge {
 
   bool is_phony() const;
   bool use_console() const;
+
+  /// A integer id for the edge, assigned and used by |DNBuilder|.
+  int id_;
 };
 
 

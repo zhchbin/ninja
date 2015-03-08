@@ -300,8 +300,10 @@ bool Plan::AddSubTarget(Node* node, vector<Node*>* stack, string* err) {
     ++wanted_edges_;
     if (edge->AllInputsReady())
       ScheduleWork(edge);
-    if (!edge->is_phony())
+    if (!edge->is_phony()) {
       ++command_edges_;
+      command_edge_set_.insert(edge);
+    }
   }
 
   if (!want_ins.second)

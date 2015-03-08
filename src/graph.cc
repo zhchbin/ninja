@@ -331,6 +331,30 @@ void Edge::Dump(const char* prefix) const {
   printf("] 0x%p\n", this);
 }
 
+void Edge::DumpToString(std::string* content) const {
+  content->clear();
+  content->append("[ ");
+  for (vector<Node*>::const_iterator i = inputs_.begin();
+       i != inputs_.end() && *i != NULL; ++i) {
+    content->append((*i)->path() + " ");
+  }
+
+  content->append("--").append(rule_->name()).append("->");
+  for (vector<Node*>::const_iterator i = outputs_.begin();
+       i != outputs_.end() && *i != NULL; ++i) {
+    content->append((*i)->path() + " ");
+  }
+  if (pool_) {
+    if (!pool_->name().empty()) {
+      content->append("(in pool '" + pool_->name() + "')");
+    }
+  } else {
+    content->append("(null pool?)");
+  }
+
+  content->append("]");
+}
+
 bool Edge::is_phony() const {
   return rule_ == &State::kPhonyRule;
 }

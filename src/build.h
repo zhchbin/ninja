@@ -66,6 +66,8 @@ struct Plan {
   /// Number of edges with commands to run.
   int command_edge_count() const { return command_edges_; }
 
+  const set<Edge*>& command_edge_set() const { return command_edge_set_; }
+
 private:
   bool AddSubTarget(Node* node, vector<Node*>* stack, string* err);
   bool CheckDependencyCycle(Node* node, vector<Node*>* stack, string* err);
@@ -92,6 +94,7 @@ private:
 
   /// Total number of edges that have commands (not phony).
   int command_edges_;
+  set<Edge*> command_edge_set_;
 
   /// Total remaining number of wanted edges.
   int wanted_edges_;
