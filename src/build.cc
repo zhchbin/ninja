@@ -350,6 +350,21 @@ Edge* Plan::FindWork() {
   return edge;
 }
 
+Edge* Plan::FindRemoteWork() {
+  for (set<Edge*>::iterator it = ready_.begin(); it != ready_.end(); ++it) {
+    std::string rule_name = (*it)->rule().name();
+    std::transform(rule_name.begin(), rule_name.end(), rule_name.begin(),
+                   ::tolower);
+    if (rule_name == "cxx" || rule_name == "cc") {
+      Edge* edge = *it;
+      ready_.erase(it);
+      return edge;
+    }
+  }
+
+  return NULL;
+}
+
 void Plan::ScheduleWork(Edge* edge) {
   Pool* pool = edge->pool();
   if (pool->ShouldDelayEdge()) {

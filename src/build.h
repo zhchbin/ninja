@@ -50,6 +50,8 @@ struct Plan {
   // Returns NULL if there's no work to do.
   Edge* FindWork();
 
+  Edge* FindRemoteWork();
+
   /// Returns true if there's more work to be done.
   bool more_to_do() const { return wanted_edges_ > 0 && command_edges_ > 0; }
 
