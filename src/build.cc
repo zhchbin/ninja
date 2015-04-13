@@ -351,11 +351,18 @@ Edge* Plan::FindWork() {
 }
 
 Edge* Plan::FindRemoteWork() {
+  const std::string build_rules[] = {
+    "cxx", "cc", "cxx_compiler", "c_compiler"
+  };
+  std::set<std::string> build_rule_name_set(
+      build_rules,
+      build_rules + sizeof(build_rules) / sizeof(build_rules[0]));
+
   for (set<Edge*>::iterator it = ready_.begin(); it != ready_.end(); ++it) {
     std::string rule_name = (*it)->rule().name();
     std::transform(rule_name.begin(), rule_name.end(), rule_name.begin(),
                    ::tolower);
-    if (rule_name == "cxx" || rule_name == "cc") {
+    if (build_rule_name_set.count(rule_name)) {
       Edge* edge = *it;
       ready_.erase(it);
       return edge;
